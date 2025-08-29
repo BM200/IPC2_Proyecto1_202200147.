@@ -1,3 +1,5 @@
+# En modelos/lista.py
+
 from .nodo import Nodo
 
 class ListaEnlazada:
@@ -18,7 +20,9 @@ class ListaEnlazada:
 
     def obtener(self, indice):
         if indice < 0 or indice >= self._tam:
+    
             return None
+        
         aux = self._cabeza
         i = 0
         while i < indice:
@@ -26,10 +30,19 @@ class ListaEnlazada:
             i += 1
         return aux.getDato()
 
-    def __iter__(self):
-        aux = self._cabeza
-        while aux is not None:
-            yield aux.getDato()
-            aux = aux.getSiguiente()
+    def reemplazar(self, indice, nuevo_dato):
+        if indice < 0 or indice >= self._tam:
+           
+            return False
 
-    def getTam(self): return self._tam
+        aux = self._cabeza
+        i = 0
+        while i < indice:
+            aux = aux.getSiguiente()
+            i += 1
+        aux.setDato(nuevo_dato)
+       
+        return True
+
+    def getTam(self): 
+        return self._tam
