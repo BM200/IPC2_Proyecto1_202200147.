@@ -23,7 +23,7 @@ class Procesador:
     @staticmethod
     def _crear_matrices_frecuencia(campo):
         """
-        AQUI, SE Crea y llena las matrices de frecuencia F[n,s] y F[n,t] para un campo agrícola.
+        Crea y llena las matrices de frecuencia F[n,s] y F[n,t] para un campo agrícola.
         """
         lista_estaciones = campo.getEstaciones()
         lista_sensores_suelo = campo.getSensoresSuelo()
@@ -183,6 +183,37 @@ class Procesador:
         campo.grupos = lista_de_grupos
 
     @staticmethod
+    def _poblar_datos_grupos(campo):
+        """
+        Recorre los grupos y establece los nombres agrupados y 
+        los IDs reducidos en cada objeto Grupo.
+        """
+        grupos = campo.grupos
+        estaciones_originales = campo.getEstaciones()
+
+        i = 0
+        while i < grupos.getTam():
+            grupo = grupos.obtener(i)
+            indices_grupo = grupo.getIndices()
+            
+            primer_indice = indices_grupo.obtener(0)
+            id_reducido = estaciones_originales.obtener(primer_indice).getId()
+            grupo.setIdReducida(id_reducido)
+            
+            nombres_concatenados = ""
+            j = 0
+            while j < indices_grupo.getTam():
+                indice_actual = indices_grupo.obtener(j)
+                nombre_estacion = estaciones_originales.obtener(indice_actual).getNombre()
+                nombres_concatenados += nombre_estacion
+                if j < indices_grupo.getTam() - 1:
+                    nombres_concatenados += ", "
+                j += 1
+            grupo.setNombreAgrupado(nombres_concatenados)
+            
+            i += 1
+
+    @staticmethod
     def _crear_matrices_reducidas(campo):
         """
         Crea las matrices reducidas Fr[n,s] y Fr[n,t] sumando 
@@ -251,30 +282,21 @@ class Procesador:
         i = 0
         while i < lista_campos.getTam():
             campo = lista_campos.obtener(i)
+            
             print(f"\n--- Procesando Campo: {campo.getNombre()} ---")
             
-            # Ejecutar todos los pasos en orden
             Procesador._crear_matrices_frecuencia(campo)
             Procesador._crear_matrices_patrones(campo)
             Procesador._agrupar_estaciones(campo)
+            Procesador._poblar_datos_grupos(campo)
             Procesador._crear_matrices_reducidas(campo)
             
-            # --- Salida de Verificación ---
             print("Grupos de estaciones encontrados:")
             if campo.grupos.getTam() > 0:
                 k = 0
                 while k < campo.grupos.getTam():
                     grupo = campo.grupos.obtener(k)
-                    indices = grupo.getIndices()
-                    linea_grupo = f"Grupo {k+1}: Índices ["
-                    m = 0
-                    while m < indices.getTam():
-                        linea_grupo += str(indices.obtener(m))
-                        if m < indices.getTam() - 1:
-                            linea_grupo += ", "
-                        m += 1
-                    linea_grupo += "]"
-                    print(linea_grupo)
+                    print(f"Grupo {k+1}: ID Reducido='{grupo.getIdReducida()}', Nombre='{grupo.getNombreAgrupado()}'")
                     k += 1
             else:
                 print("No se formaron grupos.")

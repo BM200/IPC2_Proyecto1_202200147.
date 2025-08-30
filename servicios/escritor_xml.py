@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom # Usado para darle un formato "bonito" (indentado) al XML de salida
-
+import os
 class EscritorXML:
 
     @staticmethod
@@ -9,7 +9,17 @@ class EscritorXML:
         Genera un archivo XML a partir de la lista de campos agrícolas procesados,
         utilizando la librería ElementTree para una construcción robusta.
         """
-        # Crear el elemento raíz <camposAgricolas>
+        # --- VERIFICACIÓN DE RUTA ---
+        try:
+            directorio = os.path.dirname(ruta_archivo)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio)
+        except Exception as e:
+            print(f"¡ERROR CRÍTICO! No se pudo verificar o crear el directorio para la ruta de salida.")
+            print(f"Detalle del error: {e}")
+            return False
+            
+        # --- CONSTRUCCIÓN DEL XML ---
         root = ET.Element("camposAgricolas")
 
         # Iterar sobre cada campo en nuestra ListaEnlazada
@@ -17,38 +27,22 @@ class EscritorXML:
         while i < lista_campos.getTam():
             campo = lista_campos.obtener(i)
             
-            # Crear el elemento <campo> con sus atributos
             campo_node = ET.SubElement(root, "campo", {
                 "id": campo.getId(),
                 "nombre": campo.getNombre()
             })
 
-            # --- 1. Construir <estacionesBaseReducidas> ---
+            # 1. Construir estacionesBaseReducidas ---
             estaciones_reducidas_node = ET.SubElement(campo_node, "estacionesBaseReducidas")
             grupos = campo.grupos
             
             j = 0
             while j < grupos.getTam():
                 grupo = grupos.obtener(j)
-                indices_grupo = grupo.getIndices()
-                
-                primer_indice = indices_grupo.obtener(0)
-                primera_estacion_del_grupo = campo.getEstaciones().obtener(primer_indice)
-                id_reducido = primera_estacion_del_grupo.getId()
-                
-                nombres_concatenados = ""
-                k = 0
-                while k < indices_grupo.getTam():
-                    indice_actual = indices_grupo.obtener(k)
-                    estacion_actual = campo.getEstaciones().obtener(indice_actual)
-                    nombres_concatenados += estacion_actual.getNombre()
-                    if k < indices_grupo.getTam() - 1:
-                        nombres_concatenados += ", "
-                    k += 1
-                
+                # Leemos los datos directamente del objeto Grupo ya procesado
                 ET.SubElement(estaciones_reducidas_node, "estacion", {
-                    "id": id_reducido,
-                    "nombre": nombres_concatenados
+                    "id": grupo.getIdReducida(),
+                    "nombre": grupo.getNombreAgrupado()
                 })
                 j += 1
 
@@ -70,11 +64,9 @@ class EscritorXML:
                     frecuencia_reducida = Fr_ns.get(j, k)
                     if frecuencia_reducida > 0:
                         grupo = grupos.obtener(j)
-                        primer_indice_grupo = grupo.getIndices().obtener(0)
-                        id_estacion_reducida = campo.getEstaciones().obtener(primer_indice_grupo).getId()
-                        
+                        # Leemos el ID reducido directamente del objeto Grupo
                         frecuencia_node = ET.SubElement(sensor_node, "frecuencia", {
-                            "idEstacion": id_estacion_reducida
+                            "idEstacion": grupo.getIdReducida()
                         })
                         frecuencia_node.text = str(frecuencia_reducida)
                     j += 1
@@ -98,11 +90,9 @@ class EscritorXML:
                     frecuencia_reducida = Fr_nt.get(j, k)
                     if frecuencia_reducida > 0:
                         grupo = grupos.obtener(j)
-                        primer_indice_grupo = grupo.getIndices().obtener(0)
-                        id_estacion_reducida = campo.getEstaciones().obtener(primer_indice_grupo).getId()
-
+                        # Leemos el ID reducido directamente del objeto Grupo
                         frecuencia_node = ET.SubElement(sensor_node, "frecuencia", {
-                            "idEstacion": id_estacion_reducida
+                            "idEstacion": grupo.getIdReducida()
                         })
                         frecuencia_node.text = str(frecuencia_reducida)
                     j += 1
@@ -110,12 +100,9 @@ class EscritorXML:
             
             i += 1
 
-        # --- Escribir el árbol XML al archivo ---
+        # --- ESCRITURA EN ARCHIVO ---
         try:
-            # Convertir el árbol de ElementTree a un string de bytes
             xml_string_bytes = ET.tostring(root, 'utf-8')
-            
-            # Usar minidom para "que se visualice mejor" el XML con indentación
             reparsed = minidom.parseString(xml_string_bytes)
             pretty_xml_string = reparsed.toprettyxml(indent="    ")
 
@@ -123,9 +110,10 @@ class EscritorXML:
                 archivo.write(pretty_xml_string)
             return True
         except Exception as e:
-            print(f"Error al escribir el archivo XML de salida: {e}")
+            print(f"\n¡¡¡ SE PRODUJO UN ERROR DURANTE LA ESCRITURA DEL ARCHIVO !!!")
+            print(f"Tipo de Error: {type(e).__name__}")
+            print(f"Mensaje de Error: {e}")
             return False
-
               
 
 

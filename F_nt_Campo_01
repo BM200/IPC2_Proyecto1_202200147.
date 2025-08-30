@@ -1,0 +1,11 @@
+digraph F_nt_Campo_01 {
+    node [shape=plaintext];
+    label="F_nt_Campo_01";
+    matriz_node [label=<
+        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+            <TR>
+                <TD>1500</TD>
+            </TR>
+        </TABLE>
+    >];
+}
